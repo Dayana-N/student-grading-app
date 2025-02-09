@@ -37,7 +37,8 @@ def get_student_details(curr_f_name=None, curr_l_name=None, curr_age=None):
     Gets user input and returns first_name, last_name and age
     """
     while True:
-        first_name = input("Enter student's first name: ")
+        input_message = f"Enter student's first name ({curr_f_name}): " if curr_f_name else "Enter student's first name: "
+        first_name = input(input_message) or curr_f_name
         f_name_validated = validate_name(first_name)
         if f_name_validated != "Valid":
             print(f_name_validated)
@@ -46,7 +47,8 @@ def get_student_details(curr_f_name=None, curr_l_name=None, curr_age=None):
             break
 
     while True:
-        last_name = input("Enter student's last name: ")
+        input_message = f"Enter student's last name ({curr_l_name}): " if curr_l_name else "Enter student's last name: "
+        last_name = input(input_message) or curr_l_name
         l_name_validated = validate_name(last_name)
         if l_name_validated != "Valid":
             print(l_name_validated)
@@ -55,7 +57,8 @@ def get_student_details(curr_f_name=None, curr_l_name=None, curr_age=None):
             break
 
     while True:
-        age = input("Enter student's age: ")
+        input_message = f"Enter student's age ({curr_age}): " if curr_age else "Enter student's age: "
+        age = input(input_message) or curr_age
         age_validated = validate_age(age)
         if age_validated != "Valid":
             print(age_validated)
@@ -109,6 +112,11 @@ def display_all_students():
 
 
 def update_student():
+    """
+    Displays list of all students,
+    takes user input (id) for the student to be updated,
+    updates the record in the database
+    """
     student_ids = display_all_students()
 
     while True:
@@ -127,9 +135,16 @@ def update_student():
     cursor.execute(f"SELECT * FROM tbStudents WHERE id = {student_id}")
     student = cursor.fetchone()
 
-    new_first_name, new
+    new_first_name, new_last_name, new_age = get_student_details(
+        student[1], student[2], str(student[3]))
+    cursor.execute(
+        f"""UPDATE tbStudents SET first_name = "{new_first_name}", last_name = "{new_last_name}", age = "{new_age}" WHERE id = {student_id}""")
+    print(f"Record Updated - {new_first_name, new_last_name, new_age}")
+    con.commit()
     con.close()
-    print(student)
+
+    display_all_students()
+    back_to_menu()
 
 
 def delete_student():
