@@ -32,7 +32,7 @@ def validate_age(age):
         return "Age must be whole number between 1 and 120"
 
 
-def get_students_details():
+def get_student_details(curr_f_name=None, curr_l_name=None, curr_age=None):
     """
     Gets user input and returns first_name, last_name and age
     """
@@ -70,7 +70,7 @@ def add_student():
     Add new student to tbStudents table (id, first_name, last_name, age)
     """
 
-    f_name, l_name, age = get_students_details()
+    f_name, l_name, age = get_student_details()
     con = sqlite3.connect("dbStudentRecords.db")
     cursor = con.cursor()
     cursor.execute(f"""
@@ -81,8 +81,55 @@ def add_student():
     con.close()
 
 
+def display_all_students():
+    """
+    Displays all students in a table, returns array with student ids
+    """
+
+    con = sqlite3.connect("dbStudentRecords.db")
+    cursor = con.cursor()
+    cursor.execute("""SELECT * FROM tbStudents""")
+    all_students = cursor.fetchall()
+    con.close()
+
+    student_ids = []
+
+    table = Table(title="All Students")
+    table.add_column("ID")
+    table.add_column("First Name")
+    table.add_column("Last Name")
+    table.add_column("Age")
+
+    for student in all_students:
+        student_ids.append(student[0])
+        table.add_row(str(student[0]), student[1], student[2], str(student[3]))
+
+    console.print(table)
+    return student_ids
+
+
 def update_student():
-    pass
+    student_ids = display_all_students()
+
+    while True:
+        student_id = input(
+            "Please enter the id of the student you wish to update: ")
+        if student_id.isdigit() and int(student_id) in student_ids:
+            print(student_id)
+            print("valid")
+            break
+        else:
+            print("Invalid ID")
+            continue
+
+    con = sqlite3.connect("dbStudentRecords.db")
+    cursor = con.cursor()
+    cursor.execute(f"SELECT * FROM tbStudents WHERE id = {student_id}")
+    student = cursor.fetchone()
+
+    new_first_name, new
+    con.close()
+    print(student)
 
 
 def delete_student():
