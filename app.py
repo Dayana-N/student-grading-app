@@ -147,8 +147,51 @@ def update_student():
     back_to_menu()
 
 
+def delete_confirmation():
+    while True:
+        console.print(
+            "Are you sure you wish to delete tthis record? This action cannot be reversed. Y/N", style="red")
+        user_input = input()
+        if user_input.lower() == "y":
+            return True
+
+        elif user_input.lower() == "n":
+            return False
+        else:
+            console.print("Invalid Input. Please Enter Y or N", style="red")
+            continue
+
+
 def delete_student():
-    pass
+    student_ids = display_all_students()
+
+    while True:
+        student_id = input(
+            "Please enter the id of the student you wish to delete or quit to go back to main menu: ")
+        if student_id.lower() == "quit":
+            main_menu()
+            return
+        if student_id.isdigit() and int(student_id) in student_ids:
+            print(student_id)
+            print("valid")
+            break
+        else:
+            print("Invalid ID")
+            continue
+
+    # user_confirmation = delete_confirmation()
+    if not delete_confirmation():
+        console.print("Deletion canceled", style="yellow")
+        manage_students()
+    else:
+        con = sqlite3.connect("dbStudentRecords.db")
+        cursor = con.cursor()
+        cursor.execute(f""" DELETE from tbStudents WHERE id = {student_id}""")
+        con.commit()
+        con.close()
+
+        console.print("Record Deleted!", style="green")
+        main_menu()
 
 
 def manage_students():
