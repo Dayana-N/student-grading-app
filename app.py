@@ -206,6 +206,7 @@ def delete_student():
     else:
         con = sqlite3.connect("dbStudentRecords.db")
         cursor = con.cursor()
+        cursor.execute("PRAGMA foreign_keys = ON;")
         cursor.execute(f""" DELETE from tbStudents WHERE id = {student_id}""")
         con.commit()
         con.close()
@@ -381,19 +382,6 @@ def add_marks():
     student_id = validate_user_input_id(student_ids)
     if not student_id:
         return
-    # while True:
-    #     student_id = input(
-    #         "Please enter the id of the student or quit to go back to main menu: ")
-    #     if student_id.lower() == "quit":
-    #         main_menu()
-    #         return
-    #     if student_id.isdigit() and int(student_id) in student_ids:
-    #         print(student_id)
-    #         print("valid")
-    #         break
-    #     else:
-    #         print("Invalid ID")
-    #         continue
 
     all_modules = get_modules()
     display_modules(all_modules)
@@ -401,19 +389,6 @@ def add_marks():
     module_id = validate_user_input_id(module_ids)
     if not module_id:
         return
-    # while True:
-    #     module_id = input(
-    #         "Please enter the id of the module or quit to go back to main menu: ")
-    #     if module_id.lower() == "quit":
-    #         main_menu()
-    #         return
-    #     if module_id.isdigit() and int(module_id) in module_ids:
-    #         print(module_id)
-    #         print("valid")
-    #         break
-    #     else:
-    #         print("Invalid ID")
-    #         continue
 
     while True:
         mark_input = input("Please enter the mark. 0 - 100: ")
@@ -421,19 +396,88 @@ def add_marks():
             break
         else:
             print("Invalid Input")
-
-    grade = calculate_result(int(mark_input))
+    marks = int(mark_input)
+    grade = calculate_result(marks)
 
     con = sqlite3.connect("dbStudentRecords.db")
     cursor = con.cursor()
     cursor.execute(
-        f"""INSERT INTO tbResults (student_id, module_id, marks, results) VALUES ("{student_id}", "{module_id}", "{mark_input}", "{grade}") """)
+        f"""SELECT * FROM tbResults WHERE student_id = {student_id} and module_id = {module_id}""")
+    result = cursor.fetchone()
+    if result:
+        cursor.execute(
+            f"""UPDATE tbResults SET marks = {marks}, results = '{grade}' WHERE student_id = {student_id} and module_id = {module_id} """)
+    else:
+        print(result)
+        cursor.execute(
+            f"""INSERT INTO tbResults (student_id, module_id, marks, results) VALUES ("{student_id}", "{module_id}", "{mark_input}", "{grade}") """)
     con.commit()
     con.close()
 
     console.print("Marks added successfully", style="green")
 
     print(f"{student_id}, {module_id}, {mark_input}, {grade}")
+
+    while True:
+        console.print("Do you want to add more marks? Y/N: ")
+        user_answer = input()
+        if user_answer.lower() == "y":
+            add_marks()
+            break
+        elif user_answer.lower() == "n":
+            main_menu()
+            break
+        else:
+            print("Invalid input.")
+
+
+def get_student_results():
+    """
+    Get all student results
+    """
+    con = sqlite3.connect("dbStudentRecords.db")
+    cursor = con.cursor()
+    cursor.execute("""SELECT tbStudents.id, tbStudents.first_name, tbStudents.last_name, tbStudents.age, tbModules.name, tbResults.marks, tbResults.results
+                    FROM tbResults
+                    LEFT JOIN tbStudents ON tbStudents.id = tbResults.student_id
+                    LEFT JOIN tbModules ON tbModules.id = tbResults.module_id""")
+    data = cursor.fetchall()
+    con.close()
+    print(data)
+    return data
+
+
+def generate_report(data):
+    """
+    Generate report for all students
+    """
+    student_reports = {}
+
+    # Organize data by student
+    for student_id, student_first_name, student_last_name, student_age, module_name, marks, grade in data:
+        if student_id not in student_reports:
+            student_reports[student_id] = {
+                "name": student_first_name + " " + student_last_name,
+                "age": student_age,
+                "modules": []
+            }
+
+        student_reports[student_id]["modules"].append(
+            (module_name, marks, grade))
+
+    # Write reports to individual files
+    for student_id, student_info in student_reports.items():
+        filename = f"Student_{student_id}_Report.txt"
+        with open(filename, "w") as file:
+            file.write(f"Student ID: {student_id}\n")
+            file.write(f"Name: {student_info['name']}\n")
+            file.write(f"Age: {student_info['age']}\n\n")
+            file.write("Module Results:\n")
+
+            for module_name, marks, grade in student_info["modules"]:
+                file.write(f"  {module_name}: Marks={marks}, Grade={grade}\n")
+
+        print(f"Generated report for {student_info['name']} -> {filename}")
 
 
 def main_menu():
@@ -469,10 +513,11 @@ def main_menu():
             elif user_option == 4:
                 print("Add Marks")
                 add_marks()
-                back_to_menu()
                 break
             elif user_option == 5:
                 print("Generate Report")
+                data = get_student_results()
+                generate_report(data)
             else:
                 print("Invalid option selected")
         else:
