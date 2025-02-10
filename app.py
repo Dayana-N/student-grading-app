@@ -110,22 +110,20 @@ def get_all_student_ids(all_students):
 
 def display_all_students(all_students):
     """
-    Displays all students in a table, returns array with student ids
+    Displays all students in a table
     """
     # student_ids = []
 
-    table = Table(title="All Students")
+    table = Table(title="All Students", style="cyan")
     table.add_column("ID")
     table.add_column("First Name")
     table.add_column("Last Name")
     table.add_column("Age")
 
     for student in all_students:
-        # student_ids.append(student[0])
         table.add_row(str(student[0]), student[1], student[2], str(student[3]))
 
     console.print(table)
-    # return student_ids
 
 
 def update_student():
@@ -162,7 +160,7 @@ def update_student():
     con.commit()
     con.close()
     # display the new student list
-    all_students = get_all_students
+    all_students = get_all_students()
     display_all_students(all_students)
     back_to_menu()
 
@@ -170,7 +168,7 @@ def update_student():
 def delete_confirmation():
     while True:
         console.print(
-            "Are you sure you wish to delete tthis record? This action cannot be reversed. Y/N", style="red")
+            "Are you sure you wish to delete this record? This action cannot be reversed. Y/N", style="red")
         user_input = input()
         if user_input.lower() == "y":
             return True
@@ -184,7 +182,7 @@ def delete_confirmation():
 
 def delete_student():
     all_students = get_all_students()
-    student_ids = get_all_student_ids()
+    student_ids = get_all_student_ids(all_students)
     display_all_students(all_students)
 
     while True:
@@ -254,13 +252,25 @@ def manage_students():
             print("Please select a valid option")
 
 
-def view_modules():
-
+def get_modules():
     con = sqlite3.connect('dbStudentRecords.db')
     cursor = con.cursor()
     cursor.execute("SELECT * FROM tbModules")
     modules = cursor.fetchall()
     con.close()
+    return modules
+
+
+def get_modules_ids(all_modules):
+    modules_ids = []
+
+    for module in all_modules:
+        modules_ids.append(module[0])
+
+    return modules_ids
+
+
+def display_modules(modules):
 
     # Display the records in a table
     table = Table(title="Modules", style="cyan")
@@ -271,7 +281,6 @@ def view_modules():
         table.add_row(str(module[0]), module[1])
 
     console.print(table)
-    back_to_menu()
 
 
 def back_to_menu():
@@ -323,6 +332,110 @@ def view_records():
     back_to_menu()
 
 
+def calculate_result(mark):
+    """
+    Calculate the grade based on the marks
+    """
+    if mark >= 0 and mark < 50:
+        return "Unsuccessful"
+    elif mark <= 64:
+        return "Pass"
+    elif mark <= 79:
+        return "Merit"
+    elif mark >= 80 and mark <= 100:
+        return "Distinction"
+    else:
+        return "Invalid"
+
+
+def validate_user_input_id(list_ids):
+    """
+    Takes user input, checks if it is valid and if it exists in the list of IDs
+    """
+
+    while True:
+        user_input_id = input(
+            "Please enter id or quit to go back to main menu: ")
+        if user_input_id.lower() == "quit":
+            main_menu()
+            return
+
+        if user_input_id.isdigit() and int(user_input_id) in list_ids:
+            print(user_input_id)
+            print("valid")
+            break
+        else:
+            print("Invalid ID")
+            continue
+
+    return user_input_id
+
+
+def add_marks():
+    """
+    Adds marks for selected student
+    """
+    all_students = get_all_students()
+    display_all_students(all_students)
+    student_ids = get_all_student_ids(all_students)
+    student_id = validate_user_input_id(student_ids)
+    if not student_id:
+        return
+    # while True:
+    #     student_id = input(
+    #         "Please enter the id of the student or quit to go back to main menu: ")
+    #     if student_id.lower() == "quit":
+    #         main_menu()
+    #         return
+    #     if student_id.isdigit() and int(student_id) in student_ids:
+    #         print(student_id)
+    #         print("valid")
+    #         break
+    #     else:
+    #         print("Invalid ID")
+    #         continue
+
+    all_modules = get_modules()
+    display_modules(all_modules)
+    module_ids = get_modules_ids(all_modules)
+    module_id = validate_user_input_id(module_ids)
+    if not module_id:
+        return
+    # while True:
+    #     module_id = input(
+    #         "Please enter the id of the module or quit to go back to main menu: ")
+    #     if module_id.lower() == "quit":
+    #         main_menu()
+    #         return
+    #     if module_id.isdigit() and int(module_id) in module_ids:
+    #         print(module_id)
+    #         print("valid")
+    #         break
+    #     else:
+    #         print("Invalid ID")
+    #         continue
+
+    while True:
+        mark_input = input("Please enter the mark. 0 - 100: ")
+        if mark_input.isdigit() and int(mark_input) >= 0 and int(mark_input) <= 100:
+            break
+        else:
+            print("Invalid Input")
+
+    grade = calculate_result(int(mark_input))
+
+    con = sqlite3.connect("dbStudentRecords.db")
+    cursor = con.cursor()
+    cursor.execute(
+        f"""INSERT INTO tbResults (student_id, module_id, marks, results) VALUES ("{student_id}", "{module_id}", "{mark_input}", "{grade}") """)
+    con.commit()
+    con.close()
+
+    console.print("Marks added successfully", style="green")
+
+    print(f"{student_id}, {module_id}, {mark_input}, {grade}")
+
+
 def main_menu():
     """
     Main menu for the application
@@ -349,9 +462,15 @@ def main_menu():
                 break
             elif user_option == 3:
                 print("manage Modules")
-                view_modules()
+                modules = get_modules()
+                display_modules(modules)
+                back_to_menu()
+                break
             elif user_option == 4:
                 print("Add Marks")
+                add_marks()
+                back_to_menu()
+                break
             elif user_option == 5:
                 print("Generate Report")
             else:

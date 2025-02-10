@@ -4,3 +4,4 @@ __pycache__/
 *.pyc
 student_grading/
 *.db
+test.py
