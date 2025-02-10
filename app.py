@@ -79,23 +79,40 @@ def add_student():
     cursor.execute(f"""
     INSERT INTO tbStudents (first_name, last_name, age) VALUES ("{f_name}", "{l_name}", {age})
     """)
-    print(f"{f_name}, {l_name}, {age} added to db")
+    console.print(f"{f_name}, {l_name}, {age} added to db", style="green")
     con.commit()
     con.close()
+    back_to_menu()
 
 
-def display_all_students():
+def get_all_students():
     """
-    Displays all students in a table, returns array with student ids
+    Gets all students from the database, returns list of tuples with each student record and list of ids
     """
-
     con = sqlite3.connect("dbStudentRecords.db")
     cursor = con.cursor()
     cursor.execute("""SELECT * FROM tbStudents""")
     all_students = cursor.fetchall()
     con.close()
+    return all_students
 
+
+def get_all_student_ids(all_students):
+    """
+    Loops through all students and returns an array with existing Ids
+    """
     student_ids = []
+    for student in all_students:
+        student_ids.append(student[0])
+
+    return student_ids
+
+
+def display_all_students(all_students):
+    """
+    Displays all students in a table, returns array with student ids
+    """
+    # student_ids = []
 
     table = Table(title="All Students")
     table.add_column("ID")
@@ -104,11 +121,11 @@ def display_all_students():
     table.add_column("Age")
 
     for student in all_students:
-        student_ids.append(student[0])
+        # student_ids.append(student[0])
         table.add_row(str(student[0]), student[1], student[2], str(student[3]))
 
     console.print(table)
-    return student_ids
+    # return student_ids
 
 
 def update_student():
@@ -117,7 +134,9 @@ def update_student():
     takes user input (id) for the student to be updated,
     updates the record in the database
     """
-    student_ids = display_all_students()
+    all_students = get_all_students()
+    student_ids = get_all_student_ids(all_students)
+    display_all_students(all_students)
 
     while True:
         student_id = input(
@@ -142,8 +161,9 @@ def update_student():
     print(f"Record Updated - {new_first_name, new_last_name, new_age}")
     con.commit()
     con.close()
-
-    display_all_students()
+    # display the new student list
+    all_students = get_all_students
+    display_all_students(all_students)
     back_to_menu()
 
 
@@ -163,7 +183,9 @@ def delete_confirmation():
 
 
 def delete_student():
-    student_ids = display_all_students()
+    all_students = get_all_students()
+    student_ids = get_all_student_ids()
+    display_all_students(all_students)
 
     while True:
         student_id = input(
@@ -196,28 +218,34 @@ def delete_student():
 
 def manage_students():
     console.print("Manage Students")
-    console.print("1. Add Student")
-    console.print("2. Update Student")
-    console.print("3. Delete Student")
-    console.print("4. Back to Main Menu")
-    console.print("5. Exit")
+    console.print("1. View all students")
+    console.print("2. Add Student")
+    console.print("3. Update Student")
+    console.print("4. Delete Student")
+    console.print("5. Back to Main Menu")
+    console.print("6. Exit")
 
     while True:
         user_input = input("Enter your choice: ")
         if user_input.isdigit():
             user_option = int(user_input)
-            if user_option == 5:
+            if user_option == 6:
                 quit()
-            elif user_option == 4:
+            elif user_option == 5:
                 main_menu()
                 break
             elif user_option == 1:
-                add_student()
+                all_students = get_all_students()
+                display_all_students(all_students)
+                back_to_menu()
                 break
             elif user_option == 2:
-                update_student()
+                add_student()
                 break
             elif user_option == 3:
+                update_student()
+                break
+            elif user_option == 4:
                 delete_student()
                 break
             else:
