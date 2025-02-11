@@ -1,7 +1,0 @@
-Student ID: 4
-Name: Sarah Sue
-Age: 34
-
-Module Results:
-  Python: Marks=10, Grade=Unsuccessful
-  Java: Marks=40, Grade=Unsuccessful

@@ -3,10 +3,38 @@ import sqlite3
 from rich.console import Console
 from rich.table import Table
 
-from db_query import execute_query
 from tables import create_dbtables
 
 console = Console()
+
+
+def execute_query(query, commit, fetch=None):
+    """
+    Execute database queries,
+    takes in the query,
+    commit: bool, indicates if changes need to be commited
+    fetch: fetchone or fetchall based on the amount of results expected
+    """
+    try:
+        con = sqlite3.connect("dbStudentRecords.db")
+        cursor = con.cursor()
+        cursor.execute("PRAGMA foreign_keys = ON;")
+        cursor.execute(query)
+        if fetch == "fetchone":
+            results = cursor.fetchone()
+        elif fetch == "fetchall":
+            results = cursor.fetchall()
+        else:
+            results = ''
+
+        if commit:
+            con.commit()
+        con.close()
+        return results
+    except Exception as err:
+        print(err)
+        main_menu()
+    return
 
 
 def validate_name(name_input):
@@ -118,32 +146,52 @@ def display_all_students(all_students):
     console.print(table)
 
 
+def validate_user_input_id(list_ids):
+    """
+    Takes user input, checks if it is valid and if it exists in the list of IDs
+    """
+
+    while True:
+        user_input_id = input(
+            "Please enter id or quit to go back to main menu: ")
+        if user_input_id.lower() == "quit":
+            main_menu()
+            return
+
+        if user_input_id.isdigit() and int(user_input_id) in list_ids:
+            print(user_input_id)
+            print("valid")
+            break
+        else:
+            print("Invalid ID")
+            continue
+
+    return user_input_id
+
+
 def update_student():
     """
     Displays list of all students,
     takes user input (id) for the student to be updated,
     updates the record in the database
     """
+    # Gets all the students data from db, stores all ids in a list
+    # displays the students in a table
     all_students = get_all_students()
     student_ids = get_all_student_ids(all_students)
     display_all_students(all_students)
 
-    while True:
-        student_id = input(
-            "Please enter the id of the student you wish to update: ")
-        if student_id.isdigit() and int(student_id) in student_ids:
-            print(student_id)
-            print("valid")
-            break
-        else:
-            print("Invalid ID")
-            continue
+    # validate user input for id to be updated
+    student_id = validate_user_input_id(student_ids)
+    if not student_id:
+        return
+
     query = f"SELECT * FROM tbStudents WHERE id = {student_id}"
     student = execute_query(query, False, "fetchone")
-
+    # gets the new details for the student, if no input, the value is unchanged
     new_first_name, new_last_name, new_age = get_student_details(
         student[1], student[2], str(student[3]))
-
+    # updates the records in the db
     query = f"""UPDATE tbStudents SET first_name = "{new_first_name}", last_name = "{new_last_name}", age = "{new_age}" WHERE id = {student_id}"""
     execute_query(query, True)
 
@@ -154,6 +202,9 @@ def update_student():
 
 
 def delete_confirmation():
+    """
+    Asks the user for confirmation before record is deleted
+    """
     while True:
         console.print(
             "Are you sure you wish to delete this record? This action cannot be reversed. Y/N", style="red")
@@ -169,24 +220,20 @@ def delete_confirmation():
 
 
 def delete_student():
+    """
+    Function to delete students from the db
+    """
+    # gets all the students from db, puts all ids in a list, displays all the student data
     all_students = get_all_students()
     student_ids = get_all_student_ids(all_students)
     display_all_students(all_students)
-
-    while True:
-        student_id = input(
-            "Please enter the id of the student you wish to delete or quit to go back to main menu: ")
-        if student_id.lower() == "quit":
-            main_menu()
-            return
-        if student_id.isdigit() and int(student_id) in student_ids:
-            break
-        else:
-            print("Invalid ID")
-            continue
-
+    # validates user's choice for id to be deleted
+    student_id = validate_user_input_id(student_ids)
+    if not student_id:
+        return
+    # display delete confirmation menu, if users cancels the deletion is cancelled
     if not delete_confirmation():
-        console.print("Deletion canceled", style="yellow")
+        console.print("Deletion cancelled", style="yellow")
         manage_students()
     else:
         query = f""" DELETE from tbStudents WHERE id = {student_id}"""
@@ -196,6 +243,9 @@ def delete_student():
 
 
 def manage_students():
+    """
+    Manage students menu
+    """
     console.print("Manage Students")
     console.print("1. View all students")
     console.print("2. Add Student")
@@ -234,12 +284,18 @@ def manage_students():
 
 
 def get_modules():
+    """
+    Gets all modules from the database
+    """
     query = "SELECT * FROM tbModules"
     modules = execute_query(query, False, "fetchall")
     return modules
 
 
 def get_modules_ids(all_modules):
+    """
+    Creates a list of ids
+    """
     modules_ids = []
 
     for module in all_modules:
@@ -249,7 +305,10 @@ def get_modules_ids(all_modules):
 
 
 def display_modules(modules):
-
+    """
+    Displays the list modules in a table
+    modules: list of tuples
+    """
     # Display the records in a table
     table = Table(title="Modules", style="cyan")
     table.add_column("Module ID")
@@ -262,6 +321,9 @@ def display_modules(modules):
 
 
 def back_to_menu():
+    """
+    Displays a menu to the user with options to go back to main menu or quit the program
+    """
     console.print("Press 1. To go back to the main menu", style="bold")
     console.print("Press 2. To exit", style="bold")
     while True:
@@ -321,55 +383,68 @@ def calculate_result(mark):
         return "Invalid"
 
 
-def validate_user_input_id(list_ids):
+def validate_input_marks():
     """
-    Takes user input, checks if it is valid and if it exists in the list of IDs
+    Validate user input for marks
     """
-
     while True:
-        user_input_id = input(
-            "Please enter id or quit to go back to main menu: ")
-        if user_input_id.lower() == "quit":
-            main_menu()
-            return
+        mark_input = input("Please enter the mark. 0 - 100: ")
+        if mark_input.isdigit() and int(mark_input) >= 0 and int(mark_input) <= 100:
+            return int(mark_input)
+        else:
+            print("Invalid Input")
 
-        if user_input_id.isdigit() and int(user_input_id) in list_ids:
-            print(user_input_id)
-            print("valid")
+
+def add_more_marks_menu():
+    """
+    Menu to provide easy access to add marks function
+    """
+    while True:
+        console.print("Do you want to add more marks? Y/N: ")
+        user_answer = input()
+        if user_answer.lower() == "y":
+            add_marks()
+            break
+        elif user_answer.lower() == "n":
+            main_menu()
             break
         else:
-            print("Invalid ID")
-            continue
-
-    return user_input_id
+            print("Invalid input.")
 
 
 def add_marks():
     """
-    Adds marks for selected student
+    Add/update marks for selected student
     """
+    # Gets all student data from db and displays it into table
     all_students = get_all_students()
     display_all_students(all_students)
+    # stores all student ids in a list
     student_ids = get_all_student_ids(all_students)
+    # gets the user input for id and validates it
     student_id = validate_user_input_id(student_ids)
+
     if not student_id:
         return
 
+    # Gets all modules from db and displays them into table
     all_modules = get_modules()
     display_modules(all_modules)
+    # stores all modules id into list
     module_ids = get_modules_ids(all_modules)
+    # gets user input for module id and validates it
     module_id = validate_user_input_id(module_ids)
+
     if not module_id:
         return
 
-    while True:
-        mark_input = input("Please enter the mark. 0 - 100: ")
-        if mark_input.isdigit() and int(mark_input) >= 0 and int(mark_input) <= 100:
-            break
-        else:
-            print("Invalid Input")
+    # gets user input for marks and validates it
+    mark_input = validate_input_marks()
     marks = int(mark_input)
-    grade = calculate_result(marks)
+    grade = calculate_result(marks)  # calculate the grade based on the mark
+
+    # checks the database if the record for this mark exists
+    # if it does then it updates the record, if it doesn't it creates the record
     query = f"""SELECT * FROM tbResults WHERE student_id = {student_id} and module_id = {module_id}"""
     result = execute_query(query, False, "fetchone")
 
@@ -384,18 +459,7 @@ def add_marks():
     console.print("Marks added successfully", style="green")
 
     print(f"{student_id}, {module_id}, {mark_input}, {grade}")
-
-    while True:
-        console.print("Do you want to add more marks? Y/N: ")
-        user_answer = input()
-        if user_answer.lower() == "y":
-            add_marks()
-            break
-        elif user_answer.lower() == "n":
-            main_menu()
-            break
-        else:
-            print("Invalid input.")
+    add_more_marks_menu()
 
 
 def get_student_results():
@@ -430,20 +494,32 @@ def generate_report(data):
             (module_name, marks, grade))
 
     print(student_reports)
+    write_report(student_reports)
 
-    # Write reports to individual files
+
+def write_report(student_reports):
+    """
+    Write reports to individual files
+    """
+
     for student_id, student_info in student_reports.items():
         filename = f"Student_{student_id}_Report.txt"
         with open(filename, "w") as file:
-            file.write(f"Student ID: {student_id}\n")
+            file.write("       Certificate \n")
+            file.write("============================\n")
             file.write(f"Name: {student_info['name']}\n")
             file.write(f"Age: {student_info['age']}\n\n")
             file.write("Module Results:\n")
+            file.write("============================\n")
 
             for module_name, marks, grade in student_info["modules"]:
-                file.write(f"  {module_name}: Marks={marks}, Grade={grade}\n")
+                file.write(f"{module_name}: {marks},      {grade}\n")
+            file.write("=================================\n")
+            file.write(f"     Overall grade: Grade \n")
+            file.write("=================================\n")
 
-        print(f"Generated report for {student_info['name']} -> {filename}")
+            console.print(
+                f"Generated report for {student_info['name']} - {filename}", style="cyan")
 
 
 def main_menu():
@@ -484,6 +560,9 @@ def main_menu():
                 print("Generate Report")
                 data = get_student_results()
                 generate_report(data)
+            elif user_option == 7:
+                print("secret option number 7")
+                break
             else:
                 print("Invalid option selected")
         else:
