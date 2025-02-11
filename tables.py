@@ -29,5 +29,4 @@ def create_dbtables():
                 FOREIGN KEY (module_id) REFERENCES tbModules(id) ON DELETE CASCADE)''')
 
     con.commit()
-    print('Tables created successfully')
     con.close()

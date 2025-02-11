@@ -3,6 +3,7 @@ import sqlite3
 from rich.console import Console
 from rich.table import Table
 
+from db_query import execute_query
 from tables import create_dbtables
 
 console = Console()
@@ -74,14 +75,8 @@ def add_student():
     """
 
     f_name, l_name, age = get_student_details()
-    con = sqlite3.connect("dbStudentRecords.db")
-    cursor = con.cursor()
-    cursor.execute(f"""
-    INSERT INTO tbStudents (first_name, last_name, age) VALUES ("{f_name}", "{l_name}", {age})
-    """)
-    console.print(f"{f_name}, {l_name}, {age} added to db", style="green")
-    con.commit()
-    con.close()
+    query = f"""INSERT INTO tbStudents (first_name, last_name, age) VALUES ("{f_name}", "{l_name}", {age})"""
+    execute_query(query, True)
     back_to_menu()
 
 
@@ -89,11 +84,9 @@ def get_all_students():
     """
     Gets all students from the database, returns list of tuples with each student record and list of ids
     """
-    con = sqlite3.connect("dbStudentRecords.db")
-    cursor = con.cursor()
-    cursor.execute("""SELECT * FROM tbStudents""")
-    all_students = cursor.fetchall()
-    con.close()
+    query = "SELECT * FROM tbStudents"
+    fetch = "fetchall"
+    all_students = execute_query(query, False, fetch)
     return all_students
 
 
@@ -112,7 +105,6 @@ def display_all_students(all_students):
     """
     Displays all students in a table
     """
-    # student_ids = []
 
     table = Table(title="All Students", style="cyan")
     table.add_column("ID")
@@ -146,19 +138,15 @@ def update_student():
         else:
             print("Invalid ID")
             continue
-
-    con = sqlite3.connect("dbStudentRecords.db")
-    cursor = con.cursor()
-    cursor.execute(f"SELECT * FROM tbStudents WHERE id = {student_id}")
-    student = cursor.fetchone()
+    query = f"SELECT * FROM tbStudents WHERE id = {student_id}"
+    student = execute_query(query, False, "fetchone")
 
     new_first_name, new_last_name, new_age = get_student_details(
         student[1], student[2], str(student[3]))
-    cursor.execute(
-        f"""UPDATE tbStudents SET first_name = "{new_first_name}", last_name = "{new_last_name}", age = "{new_age}" WHERE id = {student_id}""")
-    print(f"Record Updated - {new_first_name, new_last_name, new_age}")
-    con.commit()
-    con.close()
+
+    query = f"""UPDATE tbStudents SET first_name = "{new_first_name}", last_name = "{new_last_name}", age = "{new_age}" WHERE id = {student_id}"""
+    execute_query(query, True)
+
     # display the new student list
     all_students = get_all_students()
     display_all_students(all_students)
@@ -192,25 +180,17 @@ def delete_student():
             main_menu()
             return
         if student_id.isdigit() and int(student_id) in student_ids:
-            print(student_id)
-            print("valid")
             break
         else:
             print("Invalid ID")
             continue
 
-    # user_confirmation = delete_confirmation()
     if not delete_confirmation():
         console.print("Deletion canceled", style="yellow")
         manage_students()
     else:
-        con = sqlite3.connect("dbStudentRecords.db")
-        cursor = con.cursor()
-        cursor.execute("PRAGMA foreign_keys = ON;")
-        cursor.execute(f""" DELETE from tbStudents WHERE id = {student_id}""")
-        con.commit()
-        con.close()
-
+        query = f""" DELETE from tbStudents WHERE id = {student_id}"""
+        execute_query(query, True)
         console.print("Record Deleted!", style="green")
         main_menu()
 
@@ -254,11 +234,8 @@ def manage_students():
 
 
 def get_modules():
-    con = sqlite3.connect('dbStudentRecords.db')
-    cursor = con.cursor()
-    cursor.execute("SELECT * FROM tbModules")
-    modules = cursor.fetchall()
-    con.close()
+    query = "SELECT * FROM tbModules"
+    modules = execute_query(query, False, "fetchall")
     return modules
 
 
@@ -303,19 +280,14 @@ def back_to_menu():
             console.print("Please select a valid option", style="bold")
 
 
-def view_records():
+def display_records():
     """
-    View records in the database
-    student_records = {student_id:}
+    Gets records from the database and displays them in table
     """
-    con = sqlite3.connect('dbStudentRecords.db')
-    cursor = con.cursor()
-    cursor.execute("""SELECT tbStudents.id, tbStudents.first_name, tbStudents.last_name, tbModules.name, tbResults.marks, tbResults.results
+    query = """SELECT tbStudents.id, tbStudents.first_name, tbStudents.last_name, tbModules.name, tbResults.marks, tbResults.results
                         FROM tbStudents LEFT JOIN tbResults ON tbStudents.id = tbResults.student_id
-                        LEFT JOIN tbModules ON tbResults.module_id = tbModules.id""")
-    students = cursor.fetchall()
-    print(students)
-    con.close()
+                        LEFT JOIN tbModules ON tbResults.module_id = tbModules.id"""
+    students = execute_query(query, False, "fetchall")
 
     # Display the records in a table
     table = Table(title="Student Records", style="cyan")
@@ -398,21 +370,16 @@ def add_marks():
             print("Invalid Input")
     marks = int(mark_input)
     grade = calculate_result(marks)
+    query = f"""SELECT * FROM tbResults WHERE student_id = {student_id} and module_id = {module_id}"""
+    result = execute_query(query, False, "fetchone")
 
-    con = sqlite3.connect("dbStudentRecords.db")
-    cursor = con.cursor()
-    cursor.execute(
-        f"""SELECT * FROM tbResults WHERE student_id = {student_id} and module_id = {module_id}""")
-    result = cursor.fetchone()
     if result:
-        cursor.execute(
-            f"""UPDATE tbResults SET marks = {marks}, results = '{grade}' WHERE student_id = {student_id} and module_id = {module_id} """)
+        query = f"""UPDATE tbResults SET marks = {marks}, results = '{grade}' WHERE student_id = {student_id} and module_id = {module_id} """
+        execute_query(query, True)
     else:
         print(result)
-        cursor.execute(
-            f"""INSERT INTO tbResults (student_id, module_id, marks, results) VALUES ("{student_id}", "{module_id}", "{mark_input}", "{grade}") """)
-    con.commit()
-    con.close()
+        query = f"""INSERT INTO tbResults (student_id, module_id, marks, results) VALUES ("{student_id}", "{module_id}", "{mark_input}", "{grade}")"""
+        execute_query(query, True)
 
     console.print("Marks added successfully", style="green")
 
@@ -435,15 +402,12 @@ def get_student_results():
     """
     Get all student results
     """
-    con = sqlite3.connect("dbStudentRecords.db")
-    cursor = con.cursor()
-    cursor.execute("""SELECT tbStudents.id, tbStudents.first_name, tbStudents.last_name, tbStudents.age, tbModules.name, tbResults.marks, tbResults.results
+    query = """SELECT tbStudents.id, tbStudents.first_name, tbStudents.last_name, tbStudents.age, tbModules.name, tbResults.marks, tbResults.results
                     FROM tbResults
                     LEFT JOIN tbStudents ON tbStudents.id = tbResults.student_id
-                    LEFT JOIN tbModules ON tbModules.id = tbResults.module_id""")
-    data = cursor.fetchall()
-    con.close()
-    print(data)
+                    LEFT JOIN tbModules ON tbModules.id = tbResults.module_id"""
+    data = execute_query(query, False, "fetchall")
+
     return data
 
 
@@ -464,6 +428,8 @@ def generate_report(data):
 
         student_reports[student_id]["modules"].append(
             (module_name, marks, grade))
+
+    print(student_reports)
 
     # Write reports to individual files
     for student_id, student_info in student_reports.items():
@@ -499,7 +465,7 @@ def main_menu():
             if user_option == 6:
                 quit()
             elif user_option == 1:
-                view_records()
+                display_records()
                 break
             elif user_option == 2:
                 manage_students()
@@ -526,7 +492,6 @@ def main_menu():
 
 def main():
     create_dbtables()
-    print('Tables created successfully from main')
     main_menu()
 
 

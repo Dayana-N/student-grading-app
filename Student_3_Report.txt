@@ -3,6 +3,7 @@ Name: Aron Smith
 Age: 38
 
 Module Results:
-  Java: Marks=99, Grade=Distinction
+  Java: Marks=100, Grade=Distinction
   JavaScript: Marks=80, Grade=Distinction
   Python: Marks=10, Grade=Unsuccessful
+  C#: Marks=100, Grade=Distinction
