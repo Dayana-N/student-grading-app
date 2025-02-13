@@ -539,26 +539,29 @@ def write_report(student_reports):
     """
     Write reports to individual files
     """
+    try:
+        for student_id, student_info in student_reports.items():
+            filename = f"Student_{student_id}_Report.txt"
+            with open(filename, "w") as file:
+                file.write("       Certificate \n")
+                file.write("============================\n")
+                file.write(f"Name: {student_info['name']}\n")
+                file.write(f"Age: {student_info['age']}\n\n")
+                file.write("Module Results:\n")
+                file.write("============================\n")
 
-    for student_id, student_info in student_reports.items():
-        filename = f"Student_{student_id}_Report.txt"
-        with open(filename, "w") as file:
-            file.write("       Certificate \n")
-            file.write("============================\n")
-            file.write(f"Name: {student_info['name']}\n")
-            file.write(f"Age: {student_info['age']}\n\n")
-            file.write("Module Results:\n")
-            file.write("============================\n")
+                for module_name, marks, grade in student_info["modules"]:
+                    file.write(f"{module_name}: {marks}%,  {grade}\n")
+                file.write("=================================\n")
+                file.write(
+                    f"     Overall grade: {student_info['overall_grade'][student_id]} \n")
+                file.write("=================================\n")
 
-            for module_name, marks, grade in student_info["modules"]:
-                file.write(f"{module_name}: {marks}%,  {grade}\n")
-            file.write("=================================\n")
-            file.write(
-                f"     Overall grade: {student_info['overall_grade'][student_id]} \n")
-            file.write("=================================\n")
-
-            console.print(
-                f"Generated report for {student_info['name']} - {filename}", style="cyan")
+                console.print(
+                    f"Generated report for {student_info['name']} - {filename}", style="cyan")
+    except Exception as err:
+        console.print(err, style="red")
+        main_menu()
 
 
 def main_menu():
