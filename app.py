@@ -475,14 +475,45 @@ def get_student_results():
     return data
 
 
-def generate_report(data):
+def overall_grade(grades):
+    if len(grades) == 4:
+        unsuccessfull_count = grades.count("Unsuccessfull")
+        if unsuccessfull_count == 0:
+            return "Full Certification"
+        elif unsuccessfull_count > 0 and unsuccessfull_count < 4:
+            return "Partial Certification"
+        else:
+            return "No Certification"
+    else:
+        return "Course Not Completed"
+
+
+def generate_overall_grade(grades):
+    """"
+    Generates overall grade
+    """
+    overall_grades = {}
+    for student_id, student_info in grades.items():
+        all_grades = []
+        for item in student_info["modules"]:
+            all_grades.append(item[-1])
+
+        if student_id not in overall_grades:
+            overall_student_grade = overall_grade(all_grades)
+            overall_grades[student_id] = overall_student_grade
+    print(overall_grades)
+    return overall_grades
+
+
+def generate_report(student_data):
     """
     Generate report for all students
     """
     student_reports = {}
 
     # Organize data by student
-    for student_id, student_first_name, student_last_name, student_age, module_name, marks, grade in data:
+
+    for student_id, student_first_name, student_last_name, student_age, module_name, marks, grade in student_data:
         if student_id not in student_reports:
             student_reports[student_id] = {
                 "name": student_first_name + " " + student_last_name,
@@ -492,6 +523,8 @@ def generate_report(data):
 
         student_reports[student_id]["modules"].append(
             (module_name, marks, grade))
+        student_reports[student_id]["overall_grade"] = generate_overall_grade(
+            student_reports)
 
     print(student_reports)
     write_report(student_reports)
@@ -515,7 +548,8 @@ def write_report(student_reports):
             for module_name, marks, grade in student_info["modules"]:
                 file.write(f"{module_name}: {marks},      {grade}\n")
             file.write("=================================\n")
-            file.write(f"     Overall grade: Grade \n")
+            file.write(
+                f"     Overall grade: {student_info['overall_grade'][student_id]} \n")
             file.write("=================================\n")
 
             console.print(
