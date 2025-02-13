@@ -1,14 +1,13 @@
        Certificate 
 ============================
-Name: Olivia Brown
+Name: James Wilson
 Age: 20
 
 Module Results:
 ============================
-Python: 35%,  Unsuccessful
-Java: 44%,  Unsuccessful
-C#: 65%,  Merit
-JavaScript: 89%,  Distinction
+Python: 78%,  Merit
+Java: 45%,  Unsuccessful
+C#: 51%,  Pass
 =================================
-     Overall grade: Partial Certification 
+     Overall grade: Course Not Completed 
 =================================

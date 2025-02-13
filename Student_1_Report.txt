@@ -1,14 +1,14 @@
        Certificate 
 ============================
-Name: Olivia Brown
-Age: 20
+Name: Emma Johnson
+Age: 19
 
 Module Results:
 ============================
-Python: 35%,  Unsuccessful
-Java: 44%,  Unsuccessful
-C#: 65%,  Merit
-JavaScript: 89%,  Distinction
+Python: 80%,  Distinction
+Java: 75%,  Merit
+C#: 55%,  Pass
+JavaScript: 48%,  Unsuccessful
 =================================
      Overall grade: Partial Certification 
 =================================

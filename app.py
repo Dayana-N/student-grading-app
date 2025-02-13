@@ -360,8 +360,15 @@ def display_records():
     table.add_column("Results")
 
     for student in students:
-        table.add_row(str(student[0]), f"{student[1]} {student[2]}", student[3] or "", str(
-            student[4] or ""), student[5] or "")
+        # format the marks output using tiernary expression,
+        # display the mark if there are marks returned
+        # if the marks are 0 display 0
+        # else display empty strung
+        marks = str(student[4]) if student[4] else str(
+            0) if student[4] == 0 else ""
+        # add the student data to the table
+        table.add_row(str(
+            student[0]), f"{student[1]} {student[2]}", student[3] or "", marks, student[5] or "")
 
     console.print(table)
     back_to_menu()
@@ -477,7 +484,7 @@ def get_student_results():
 
 def overall_grade(grades):
     if len(grades) == 4:
-        unsuccessfull_count = grades.count("Unsuccessfull")
+        unsuccessfull_count = grades.count("Unsuccessful")
         if unsuccessfull_count == 0:
             return "Full Certification"
         elif unsuccessfull_count > 0 and unsuccessfull_count < 4:
@@ -501,7 +508,6 @@ def generate_overall_grade(grades):
         if student_id not in overall_grades:
             overall_student_grade = overall_grade(all_grades)
             overall_grades[student_id] = overall_student_grade
-    print(overall_grades)
     return overall_grades
 
 
@@ -526,7 +532,6 @@ def generate_report(student_data):
         student_reports[student_id]["overall_grade"] = generate_overall_grade(
             student_reports)
 
-    print(student_reports)
     write_report(student_reports)
 
 
@@ -546,7 +551,7 @@ def write_report(student_reports):
             file.write("============================\n")
 
             for module_name, marks, grade in student_info["modules"]:
-                file.write(f"{module_name}: {marks},      {grade}\n")
+                file.write(f"{module_name}: {marks}%,  {grade}\n")
             file.write("=================================\n")
             file.write(
                 f"     Overall grade: {student_info['overall_grade'][student_id]} \n")
