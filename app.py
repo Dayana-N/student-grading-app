@@ -64,6 +64,7 @@ def validate_age(age):
 def get_student_details(curr_f_name=None, curr_l_name=None, curr_age=None):
     """
     Gets user input and returns first_name, last_name and age
+    used for update and create student. Displays current name if one exists
     """
     while True:
         input_message = f"Enter student's first name ({curr_f_name}): " if curr_f_name else "Enter student's first name: "
@@ -99,7 +100,8 @@ def get_student_details(curr_f_name=None, curr_l_name=None, curr_age=None):
 
 def add_student():
     """
-    Add new student to tbStudents table (id, first_name, last_name, age)
+    Add new student to tb
+     table (id, first_name, last_name, age)
     """
 
     f_name, l_name, age = get_student_details()
@@ -160,7 +162,6 @@ def validate_user_input_id(list_ids):
 
         if user_input_id.isdigit() and int(user_input_id) in list_ids:
             print(user_input_id)
-            print("valid")
             break
         else:
             print("Invalid ID")
@@ -459,7 +460,6 @@ def add_marks():
         query = f"""UPDATE tbResults SET marks = {marks}, results = '{grade}' WHERE student_id = {student_id} and module_id = {module_id} """
         execute_query(query, True)
     else:
-        print(result)
         query = f"""INSERT INTO tbResults (student_id, module_id, marks, results) VALUES ("{student_id}", "{module_id}", "{mark_input}", "{grade}")"""
         execute_query(query, True)
 
@@ -514,11 +514,12 @@ def generate_overall_grade(grades):
 def generate_report(student_data):
     """
     Generate report for all students
+    student_data: retrieved databa from the db list of tuples
     """
     student_reports = {}
 
     # Organize data by student
-
+    # unpack the values from each tuple within the list student_data
     for student_id, student_first_name, student_last_name, student_age, module_name, marks, grade in student_data:
         if student_id not in student_reports:
             student_reports[student_id] = {
@@ -541,7 +542,7 @@ def write_report(student_reports):
     """
     try:
         for student_id, student_info in student_reports.items():
-            filename = f"Student_{student_id}_Report.txt"
+            filename = f"{student_id}_{student_info['name']}_Report.txt"
             with open(filename, "w") as file:
                 file.write("       Certificate \n")
                 file.write("============================\n")
@@ -602,9 +603,7 @@ def main_menu():
                 print("Generate Report")
                 data = get_student_results()
                 generate_report(data)
-            elif user_option == 7:
-                print("secret option number 7")
-                break
+
             else:
                 print("Invalid option selected")
         else:

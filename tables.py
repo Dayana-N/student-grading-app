@@ -33,3 +33,11 @@ def create_dbtables():
         con.close()
     except Exception as err:
         print(err)
+
+
+def main():
+    create_dbtables()
+
+
+if __name__ == "__main__":
+    main()
